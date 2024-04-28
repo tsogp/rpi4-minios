@@ -1,0 +1,4 @@
+/home/tsogp/prog/c/embed3/asm2/build/CMakeFiles/kernel.elf.dir
+/home/tsogp/prog/c/embed3/asm2/build/CMakeFiles/uart0.dir
+/home/tsogp/prog/c/embed3/asm2/build/CMakeFiles/edit_cache.dir
+/home/tsogp/prog/c/embed3/asm2/build/CMakeFiles/rebuild_cache.dir

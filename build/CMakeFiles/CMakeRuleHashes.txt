@@ -1,0 +1,2 @@
+# Hashes of file build rules.
+5855c26294a3dabfe364479f8ec26ec2 CMakeFiles/uart0
