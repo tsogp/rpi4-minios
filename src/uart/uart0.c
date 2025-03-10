@@ -18,6 +18,12 @@ void uart_init()
         r = GPFSEL1;
         r &=  ~((7 << 12) | (7 << 15)); //clear bits 17-12 (FSEL15, FSEL14)
         r |= (0b100 << 12)|(0b100 << 15);   //Set value 0b100 (select ALT0: TXD0/RXD0)
+
+        if (cf.handshake == &handshakes[1]) {
+                r &= ~((7 << 18) | (7 << 21));
+                r |= ((7 << 18) | (7 << 21));
+        }
+
         GPFSEL1 = r;
 
 
@@ -27,13 +33,25 @@ void uart_init()
 	//Toogle clock to flush GPIO setup
 	r = 150; while(r--) { asm volatile("nop"); } //waiting 150 cycles
 	GPPUDCLK0 = (1 << 14)|(1 << 15); //enable clock for GPIO 14, 15
-	r = 150; while(r--) { asm volatile("nop"); } //waiting 150 cycles
+
+        if (cf.handshake == &handshakes[1]) {
+                GPPUDCLK0 |= (1 << 16) | (1 << 17);
+        }
+
+        r = 150; while(r--) { asm volatile("nop"); } //waiting 150 cycles
 	GPPUDCLK0 = 0;        // flush GPIO setup
 
 #else //RPI4
         r = GPIO_PUP_PDN_CNTRL_REG0;
         r &= ~((3 << 28) | (3 << 30)); //No resistor is selected for GPIO 14, 15
         GPIO_PUP_PDN_CNTRL_REG0 = r;
+        if (cf.handshake == &handshakes[1]) {
+                r = GPIO_PUP_PDN_CNTRL_REG1;
+                r &= ~((3 << 0) | (3 << 2)); // no resistor
+                GPIO_PUP_PDN_CNTRL_REG1 = r;
+
+                // GPIO_PUP_PDN_CNTRL_REG1 &= ~((3 << 0) | (3 << 2));
+        }
 #endif
 
         /* Mask all interrupts. */
@@ -43,39 +61,21 @@ void uart_init()
         UART0_ICR = 0x7FF;
 
         float baud_divider = (float) UART_FREQUENCY / (16 * cf.baud_rate);
-        unsigned int IBRD = (unsigned int) baud_divider;
+        int IBRD = (int) baud_divider;
 
-        float frac = (float) (baud_divider - IBRD) * 64 + 0.5;
-        float diff = frac - (unsigned int) frac;
-        if (diff >= 0.5) {
-                frac += 0.5;
-        }
+        float frac = (float) (baud_divider - IBRD) * 64 + 0.5f;
+        float diff = frac - (int) frac;
+        frac = (diff >= 0.5) ? frac + 0.5f : frac;
 
-        unsigned int FBRD = (unsigned int) frac;
+        int FBRD = (int) frac;
 
         /* Set up Baud Rate */
         UART0_IBRD = IBRD;
         UART0_FBRD = FBRD;
 
-        /* Set up the Line Control Register */
-        /* Enable FIFO */
-        /* Set length to 8 bit */
-        /* Defaults for other bit are No parity, 1 stop bit */
-        UART0_LCRH = cf.parity->value | cf.data_bit->value | cf.stop_bit->value;
+        UART0_LCRH = cf.parity->value | UART0_LCRH_FEN | cf.data_bit->value | cf.stop_bit->value;
 
-        /* Set Up Handshaking: ensure all Data IO is off */
-        UART0_CR &= ~UART0_CR_TXE; // TX off
-        UART0_CR &= ~UART0_CR_RXE; // RX off
-
-        if (cf.handshake != &handshakes[0]) {
-                UART0_CR |= cf.handshake->value;
-        }
-
-        /* FIFO back on */
-        UART0_LCRH |= UART0_LCRH_FEN;
-
-        /* Enable UART0, receive, and transmit */
-        UART0_CR = 0x301;     // enable Tx, Rx, FIFO
+        UART0_CR = cf.handshake->value | UART0_CR_UARTEN | UART0_CR_TXE | UART0_CR_RXE;
 }
 
 /**
