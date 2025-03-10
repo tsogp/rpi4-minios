@@ -40,12 +40,11 @@ static const arg_config parities[] = {
 
 const arg_config *find_parities_args(const char *name);
 
-#define HANDSHAKES_ARGS_SIZE 3
+#define HANDSHAKES_ARGS_SIZE 2
 
 static const arg_config handshakes[] = {
         {"DISABLED", 0},
-        {"CTS", UART0_CR_CTSEN},
-        {"RTS", UART0_CR_RTSEN},
+        {"ENABLED", UART0_CR_CTSEN | UART0_CR_RTSEN},
 };
 
 const arg_config *find_handshakes_args(const char *name);
@@ -60,12 +59,8 @@ typedef struct config {
     const arg_config *handshake;
 } config;
 
-static config cf = {
-        115600,
-        &data_bits[3],
-        &stop_bits[0],
-        &parities[0],
-        &handshakes[0]
-};
+extern config cf;
+
+void update_config(uint32_t baud_rate, const arg_config *data_bit, const arg_config *stop_bit, const arg_config *parity, const arg_config *handshake);
 
 #endif //ASM2_CONFIG_H
