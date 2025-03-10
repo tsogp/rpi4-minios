@@ -7,7 +7,7 @@
 
 #include "include/uart/uart0.h"
 
-void fill_board_revision(volatile uint32_t val, char* buf) {
+void fill_board_revision(volatile uint32_t val) {
         bool leading_zero = true;
         for (int pos = 28; pos >= 0; pos = pos - 4) {
                 char digit = (val >> pos) & 0xF;
@@ -20,51 +20,44 @@ void fill_board_revision(volatile uint32_t val, char* buf) {
                         leading_zero = false;
                 }
 
-                *buf++ = digit;
+                uart_sendc(digit);
         }
-
-        *buf = '\0';
 }
 
-void fill_mac_addr(volatile uint32_t first_chunk, volatile uint32_t second_chunk, char *buf) {
-        uint8_t fill_semicolon = 0;
-        bool skip_first = true;
+void fill_mac_addr(volatile uint32_t first_chunk, volatile uint32_t second_chunk) {
+        for (int pos = 0; pos <= 24; pos = pos + 8) {
+                uint8_t digit = (first_chunk >> pos) & 0xFF;
 
-        for (int pos = 12; pos >= 0; pos = pos - 4) {
-                char digit = (first_chunk >> pos) & 0xF;
+                char ch1 = digit & 0xF, ch2 = (digit >> 4) & 0xf;
 
-                digit += (digit > 9) ? (-10 + 'A') : '0';
-                if (!skip_first && fill_semicolon % 2 == 0) {
-                        *buf++ = ':';
-                }
+                ch1 += (ch1 > 9) ? (-10 + 'A') : '0';
+                ch2 += (ch2 > 9) ? (-10 + 'A') : '0';
 
-                if (skip_first) {
-                        skip_first = false;
-                }
-
-                *buf++ = digit;
-                fill_semicolon = (fill_semicolon + 1) % 2;
+                uart_sendc(ch2);
+                uart_sendc(ch1);
+                uart_sendc(':');
         }
 
-        for (int pos = 28; pos >= 0; pos = pos - 4) {
-                char digit = (second_chunk >> pos) & 0xF;
+        for (int pos = 0; pos <= 8; pos = pos + 8) {
+                uint8_t digit = (second_chunk >> pos) & 0xFF;
 
-                digit += (digit > 9) ? (-10 + 'A') : '0';
-                if (fill_semicolon % 2 == 0) {
-                        *buf++ = ':';
+                char ch1 = digit & 0xF, ch2 = (digit >> 4) & 0xf;
+
+                ch1 += (ch1 > 9) ? (-10 + 'A') : '0';
+                ch2 += (ch2 > 9) ? (-10 + 'A') : '0';
+
+                uart_sendc(ch2);
+                uart_sendc(ch1);
+                if (pos != 8) {
+                        uart_sendc(':');
                 }
-
-                *buf++ = digit;
-                fill_semicolon = (fill_semicolon + 1) % 2;
         }
 }
 
 err_code showinfo_cmd_handler() {
         if (strtok(NULL, CMD_ARGS_SEPARATOR) != NULL) {
-                return invalid_cmd_usage(&cmds_buf[CLEAR]);
+                return invalid_cmd_usage(&cmds_buf[SHOWINFO]);
         }
-
-        char board_revision[BOARD_REVISION_SIZE + 1], mac_addr[MAC_ADDRESS_SIZE];
 
         mBuf[0] = 11 * 8;
         mBuf[1] = MBOX_REQUEST;
@@ -81,21 +74,13 @@ err_code showinfo_cmd_handler() {
         mBuf[10] = 0;
 
         if (mbox_call(ADDR(mBuf), MBOX_CH_PROP)) {
-//                uart_puts("\nResponse Code for whole message: ");
-//                uart_hex(mBuf[1]);
 
-//                uart_puts("\n+ Response Code in Message TAG: ");
-//                uart_hex(mBuf[4]);
-                fill_board_revision(mBuf[5], board_revision);
                 uart_puts("Board Revision = ");
-                uart_puts(board_revision);
+                fill_board_revision(mBuf[5]);
                 uart_puts("\n");
 
-                fill_mac_addr(mBuf[10], mBuf[9], mac_addr);
-//                uart_puts("\n+ Response Code in Message TAG: ");
-//                uart_hex(mBuf[8]);
                 uart_puts("MAC Address = ");
-                uart_puts(mac_addr);
+                fill_mac_addr(mBuf[9], mBuf[10]);
         } else {
                 uart_puts("Error retrieving data.");
                 return CMD_RUNTIME_ERROR;

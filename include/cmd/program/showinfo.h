@@ -13,8 +13,8 @@
 
 err_code showinfo_cmd_handler();
 
-void fill_board_revision(volatile uint32_t val, char* buf);
+void fill_board_revision(volatile uint32_t val);
 
-void fill_mac_addr(volatile uint32_t first_chunk, volatile uint32_t second_chunk, char *buf);
+void fill_mac_addr(volatile uint32_t first_chunk, volatile uint32_t second_chunk);
 
 #endif
