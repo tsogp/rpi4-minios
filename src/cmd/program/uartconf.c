@@ -74,41 +74,7 @@ err_code uartconf_cmd_handler() {
                 return invalid_cmd_usage(&cmds_buf[UARTCONF]);
         }
 
-        if (baud_rate != 0) {
-                uart_puts("Baud Rate set to ");
-                uart_dec(baud_rate);
-                uart_puts(".\n");
-                cf.baud_rate = baud_rate;
-        }
-
-        if (data_bit != NULL) {
-                uart_puts("Data Bit amount set to ");
-                uart_puts(data_bit->name);
-                uart_puts(".\n");
-                cf.data_bit = data_bit;
-        }
-
-        if (stop_bit != NULL) {
-                uart_puts("Stop Bit amount set to ");
-                uart_puts(stop_bit->name);
-                uart_puts(".\n");
-                cf.stop_bit = stop_bit;
-        }
-
-        if (parity != NULL) {
-                uart_puts("Parity set to ");
-                uart_puts(parity->name);
-                uart_puts(".\n");
-                cf.parity = parity;
-        }
-
-        if (handshake != NULL) {
-                uart_puts("Handshake set to ");
-                uart_puts(handshake->name);
-                uart_puts(".\n");
-                cf.handshake = handshake;
-        }
-
+        update_config(baud_rate, data_bit, stop_bit, parity, handshake);
         uart_init();
         return SUCCESS;
 }
