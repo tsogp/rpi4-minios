@@ -19,7 +19,7 @@
 /*
  * Buffer size for the command
 */
-#define MAX_COMMAND_SIZE 5
+#define MAX_COMMAND_SIZE 100
 
 /*
  * Buffer size for command history
