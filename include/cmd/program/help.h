@@ -17,7 +17,8 @@
         "  help [COMMAND]                                      - Show full information of the command\n" \
         "  clear                                               - Clear screen\n" \
         "  setcolor -t [TEXT_COLOR] -b [BACKGROUND_COLOR]      - Set text color, and/or background color\n" \
-        "  showinfo                                            - Show board revision and board MAC address\n"
+        "  showinfo                                            - Show board revision and board MAC address\n" \
+        "  uartconf [PARAMS]                                   - Configure UART0 settings\n"
 
 err_code help_cmd_handler();
 
